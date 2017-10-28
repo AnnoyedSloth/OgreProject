@@ -15,6 +15,7 @@ http://www.ogre3d.org/wiki/
 -----------------------------------------------------------------------------
 */
 
+#include "stdafx.h"
 #include "TutorialApplication.h"
 
 using namespace Ogre;
@@ -22,163 +23,88 @@ using namespace Ogre;
 //---------------------------------------------------------------------------
 TutorialApplication::TutorialApplication(void)
 {
+	// 종료 플래그
+	mShutDown = false;
+
+	// player 1,2 좌표설정
+	player1Position = Vector3(-400, 0, 0);
+	player2Position = Vector3(400, 0, 0);
+
+	player1Move = Vector3(0, 0, 0);
+	player2Move = Vector3(0, 0, 0);
+
+	mDirection = Vector3(0, 0, 0);
+
+
+	mMove = 200.0f;
 }
 //---------------------------------------------------------------------------
 TutorialApplication::~TutorialApplication(void)
 {
 }
 
-//bool TutorialApplication::keyPressed(const OIS::KeyEvent& ke) {
-//
-//	switch (ke.key) {
-//	case OIS::KC_UP:
-//	case OIS::KC_W:
-//		mDirection.z = -mMove;
-//		break;
-//	case OIS::KC_DOWN:
-//	case OIS::KC_S:
-//		mDirection.z = mMove;
-//		break;
-//	case OIS::KC_LEFT:
-//	case OIS::KC_A:
-//		mDirection.x = -mMove;
-//		break;
-//	case OIS::KC_RIGHT:
-//	case OIS::KC_D:
-//		mDirection.x = mMove;
-//		break;
-//	case OIS::KC_PGDOWN:
-//	case OIS::KC_E:
-//		mDirection.y = -mMove;
-//		break;
-//	case OIS::KC_PGUP:
-//	case OIS::KC_Q:
-//		mDirection.y = mMove;
-//		break;
-//	default:
-//		break;
-//
-//	}
-//
-//	return true;
-//}
-//bool TutorialApplication::keyReleased(const OIS::KeyEvent& ke) {
-//	switch (ke.key) {
-//	case OIS::KC_UP: case OIS::KC_W:
-//		mDirection.z = 0;
-//		break;
-//	case OIS::KC_DOWN: case OIS::KC_S:
-//		mDirection.z = 0;
-//		break;
-//	case OIS::KC_LEFT: case OIS::KC_A:
-//		mDirection.x = 0;
-//		break;
-//	case OIS::KC_RIGHT: case OIS::KC_D:
-//		mDirection.x = 0;
-//		break;
-//	case OIS::KC_PGDOWN: case OIS::KC_E:
-//		mDirection.y = 0;
-//		break;
-//	case OIS::KC_PGUP: case OIS::KC_Q:
-//		mDirection.y = 0;
-//		break;
-//	default:
-//		break;
-//	}
-//
-//	return true;
-//}
+bool TutorialApplication::keyPressed(const OIS::KeyEvent& ke) {
 
-//bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
-//
-//	bool ret = BaseApplication::frameRenderingQueued(evt);
-//
-//	mCamNode->translate(mDirection * evt.timeSinceLastFrame, Ogre::Node::TS_LOCAL);
-//
-//	if (!processUnbufferedInput(evt)) return false;
-//
-//	mMouse->getMouseState().buttonDown(OIS::MB_Left);
-//	mKeyboard->isKeyDown(OIS::KC_SPACE);
-//
-//	return ret;
-//
-//}
+	if (ke.key == OIS::KC_W) player1Move.z -= mMove;
+	if (ke.key == OIS::KC_S) player1Move.z += mMove;
+	if (ke.key == OIS::KC_ESCAPE) mShutDown = true;
 
-//bool TutorialApplication::processUnbufferedInput(const Ogre::FrameEvent& evt) {
-//	static bool mMouseDown = false;
-//	static Ogre::Real mToggle = 0.0;
-//	static Ogre::Real mRotate = 0.13;
-//	static Ogre::Real mMove = 250;
-//
-//	bool currMouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
-//
-//	if (currMouse && !mMouseDown) {
-//		Ogre::Light* light = mSceneMgr->getLight("Light1");
-//		light->setVisible(!light->isVisible());
-//	}
-//
-//	mMouseDown = currMouse;
-//	mToggle -= evt.timeSinceLastFrame;
-//
-//	if ((mToggle < 0.0f) && mMouse->getMouseState().buttonDown(OIS::MB_Right)) {
-//		mToggle = 0.5;
-//		Ogre::Light* light = mSceneMgr->getLight("Light1");
-//		light->setVisible(!light->isVisible());
-//	}
-//
-//	return true;
-//}
-
-
-void TutorialApplication::createColourCube() {
-	MeshPtr msh = MeshManager::getSingleton().createManual("ColourCube", "General");
-
-	SubMesh* sub = msh->createSubMesh();
-
-	const float sqrt13 = 0.577350269f;
-
-	const size_t nVertices = 8;
-	const size_t vbufCount = 3 * 2 * nVertices;
-	float vertices[vbufCount] =
-	{ -100.0,100.0,-100.0,        // 0 position 
-	  -sqrt13,sqrt13,-sqrt13,     // 0 normal
-	  100.0,100.0,-100.0,         // 1 position
-		sqrt13,sqrt13,-sqrt13,    // 1 normal
-		100.0,-100.0,-100.0,      // 2 position
-		sqrt13,-sqrt13,-sqrt13,   // 2 normal
-		-100.0,-100.0,-100.0,     // 3 position
-		-sqrt13,-sqrt13,-sqrt13,  // 3 normal
-		-100.0,100.0,100.0,       // 4 position
-		-sqrt13,sqrt13,sqrt13,    // 4 normal
-		100.0,100.0,100.0,        // 5 position
-		sqrt13,sqrt13,sqrt13,     // 5 normal
-		100.0,-100.0,100.0,       // 6 position
-		sqrt13,-sqrt13,sqrt13,    // 6 normal
-		-100.0,-100.0,100.0,      // 7 position
-		-sqrt13,-sqrt13,sqrt13,   // 7 normal
-	};
-
-	const size_t ibufCount = 36;
-	unsigned short faces[ibufCount] = {
-		0,2,3,
-		0,1,2,
-		1,6,2,
-		1,5,6,
-		4,5,6,
-		4,7,6,
-		0,7,4,
-		0,3,7,
-		0,5,1,
-		0,4,5,
-		2,7,3,
-		2,6,7 };
-
-	msh->sharedVertexData = new VertexData();
-	msh->sharedVertexData->vertexCount = nVertices;
-
-	VertexDeclaration* decl = msh->sharedVertexData->vertexDeclaration;
-	size_t offset = 0;
+	return true;
 }
+
+bool TutorialApplication::keyReleased(const OIS::KeyEvent& ke) {
+	switch (ke.key) {
+	case OIS::KC_W:
+		player1Move.z = 0;
+		break;
+	case OIS::KC_S:
+		player1Move.z = 0;
+		break;
+	default:
+		break;
+	}
+	return true;
+}
+
+bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
+
+	bool ret = BaseApplication::frameRenderingQueued(evt);
+
+	if (mKeyboard->isKeyDown(OIS::KC_SPACE)) mIsStarted = true;
+
+	if (!mIsStarted) return ret;
+
+	if (!processUnbufferedInput(evt)) return false;
+	if (mShutDown) return false;
+
+	mMouse->capture();
+	mKeyboard->capture();
+
+
+	mSceneMgr->getSceneNode("Player1Node")->translate(player1Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
+
+
+
+
+	return ret;
+}
+
+bool TutorialApplication::processUnbufferedInput(const Ogre::FrameEvent& evt) {
+	static bool mMouseDown = false;
+	static Ogre::Real mToggle = 0.0;
+	static Ogre::Real mRotate = 0.13;
+	static Ogre::Real mMove = 250;
+
+	//bool currMouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
+
+	//mMouseDown = currMouse;
+	mToggle -= evt.timeSinceLastFrame;
+
+	//mSceneMgr->getSceneNode("Player1Node")->translate(player1Position * evt.timeSinceLastFrame, Node::TS_LOCAL);
+
+	return true;
+}
+
 
 //---------------------------------------------------------------------------
 void TutorialApplication::createScene(void)
@@ -195,29 +121,31 @@ void TutorialApplication::createScene(void)
 	light->setPosition(300, 300, 300);
 
 	//Change a camera's position 
-	mCamera->setPosition(0, 0, 500);
-	//Create a colored cube
-	createColourCube();
+	mCamera->setPosition(0, 1000, 0);
+	//mCamera->lookAt(Vector3(0, 0, 0));
 
-	//Ogre::Entity* sphereEnt = mSceneMgr->createEntity("MySphere", Ogre::SceneManager::PT_SPHERE);
-	//sphereEnt->setMaterialName("BaseWhiteLighting");
-	//Ogre::SceneNode *sphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-	//sphereNode->setScale(0.5f, 0.5f, 0.5f);
-	//sphereNode->attachObject(sphereEnt);
+	Ogre::Entity* sphereEnt = mSceneMgr->createEntity("MySphere", Ogre::SceneManager::PT_SPHERE);
+	sphereEnt->setMaterialName("BaseWhiteLighting");
+	Ogre::SceneNode *sphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	sphereNode->setScale(0.5f, 0.5f, 0.5f);
+	sphereNode->setPosition(0, 0, 0);
+	sphereNode->attachObject(sphereEnt);
 
-	////Create a plane 
-	//Ogre::Entity* planeEnt = mSceneMgr->createEntity("MyPlane", Ogre::SceneManager::PT_CUBE);
-	//planeEnt->setMaterialName("BaseWhiteLighting");
-	//Ogre::SceneNode *planeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-	////planeNode->pitch(Ogre::Degree(-70));
-	//planeNode->setPosition(-200, 0, -500); planeNode->attachObject(planeEnt);
-	////Create a cube 
-	//Ogre::Entity* cubeEnt = mSceneMgr->createEntity("MyCube", Ogre::SceneManager::PT_CUBE);
-	//cubeEnt->setMaterialName("BaseWhiteLighting");
-	//Ogre::SceneNode* cubeNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-	//cubeNode->setPosition(200, 0, -500);
-	//cubeNode->setScale(1.0f, 1.0f, 1.0f);
-	//cubeNode->attachObject(cubeEnt);
+	//Player1 Creating
+	Entity* player1 = mSceneMgr->createEntity("Player1", SceneManager::PT_CUBE);
+	player1->setMaterialName("BaseWhiteLighting");
+	SceneNode *player1Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player1Node");
+	player1Node->scale(0.5f, 1.0f, 2.0f);
+	player1Node->setPosition(player1Position.x, player1Position.y, player1Position.z);
+	player1Node->attachObject(player1);
+
+	//Player2 Creating
+	Entity* player2 = mSceneMgr->createEntity("Player2", SceneManager::PT_CUBE);
+	player2->setMaterialName("BaseWhiteLighting");
+	SceneNode *player2Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player2Node");
+	player2Node->scale(0.5f, 1.0f, 2.0f);
+	player2Node->setPosition(player2Position.x, player2Position.y, player2Position.z);
+	player2Node->attachObject(player2);
 
 	//Ogre::Mesh* mMesh = Ogre::MeshManager::getSingleton().createManual()
 

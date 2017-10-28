@@ -15,6 +15,7 @@ http://www.ogre3d.org/wiki/
 -----------------------------------------------------------------------------
 */
 
+#include "stdafx.h"
 #include "BaseApplication.h"
 
 #if OGRE_PLATFORM == OGRE_PLATFORM_APPLE
@@ -95,9 +96,9 @@ void BaseApplication::createCamera(void)
     mCamera = mSceneMgr->createCamera("PlayerCam");
 
     // Position it at 500 in Z direction
-    mCamera->setPosition(Ogre::Vector3(0,0,80));
+    mCamera->setPosition(Ogre::Vector3(0,0,50));
     // Look back along -Z
-    mCamera->lookAt(Ogre::Vector3(0,0,-300));
+    mCamera->lookAt(Ogre::Vector3(0,-1000,0));
     mCamera->setNearClipDistance(5);
 
     mCameraMan = new OgreBites::SdkCameraMan(mCamera);   // Create a default camera controller

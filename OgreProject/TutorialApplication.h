@@ -25,26 +25,33 @@ http://www.ogre3d.org/wiki/
 class TutorialApplication : public BaseApplication
 {
 public:
-	//TutorialApplication(void) : mRotate(13), mMove(250), mCamNode(0), mDirection(Ogre::Vector3::ZERO) {};
 	TutorialApplication();
     virtual ~TutorialApplication(void);
 
 protected:
     virtual void createScene(void);
-	//virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
-	//virtual bool keyPressed(const OIS::KeyEvent& ke);
-	//virtual bool keyReleased(const OIS::KeyEvent& ke);
+	virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
+	virtual bool keyPressed(const OIS::KeyEvent& ke);
+	virtual bool keyReleased(const OIS::KeyEvent& ke);
 
-	void createColourCube();
+	//void createColourCube();
 
 	Ogre::Real mRotate;
 	Ogre::Real mMove;
 	Ogre::SceneNode* mCamNode;
 	Ogre::Vector3 mDirection;
 
+	Ogre::Vector3 player1Position;						   
+	Ogre::Vector3 player2Position;
+
+	Ogre::Vector3 player1Move;
+	Ogre::Vector3 player2Move;
+
 
 private:
-	//bool processUnbufferedInput(const Ogre::FrameEvent& evt);
+	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
+	bool mIsStarted;
+	bool mShutDown;
 };
 
 //---------------------------------------------------------------------------

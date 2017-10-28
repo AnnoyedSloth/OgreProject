@@ -44,25 +44,21 @@ TutorialApplication::~TutorialApplication(void)
 }
 
 bool TutorialApplication::keyPressed(const OIS::KeyEvent& ke) {
-
-	if (ke.key == OIS::KC_W) player1Move.z -= mMove;
-	if (ke.key == OIS::KC_S) player1Move.z += mMove;
+	if(player1Position.z < 10 && player1Position.z > -10){
+		if (ke.key == OIS::KC_W) player1Move.z -= mMove;
+		if (ke.key == OIS::KC_S) player1Move.z += mMove;
+	}
+	if (ke.key == OIS::KC_UP) player2Move.z -= mMove;
+	else if (ke.key == OIS::KC_DOWN) player2Move.z += mMove;
 	if (ke.key == OIS::KC_ESCAPE) mShutDown = true;
 
 	return true;
 }
 
 bool TutorialApplication::keyReleased(const OIS::KeyEvent& ke) {
-	switch (ke.key) {
-	case OIS::KC_W:
-		player1Move.z = 0;
-		break;
-	case OIS::KC_S:
-		player1Move.z = 0;
-		break;
-	default:
-		break;
-	}
+	if(ke.key == OIS::KC_W && player1Move.z > 0) player1Move.z = 0;
+	if(ke.key == OIS::KC_S && player1Move.z < 0) player1Move.z = 0;
+	if(ke.key == OIS::KC_UP || ke.key == OIS::KC_DOWN) player2Move.z = 0;
 	return true;
 }
 
@@ -82,11 +78,16 @@ bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
 
 
 	mSceneMgr->getSceneNode("Player1Node")->translate(player1Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
+	mSceneMgr->getSceneNode("Player2Node")->translate(player2Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
 
 
 
 
 	return ret;
+}
+
+bool TutorialApplication::Moving(){
+	return true;
 }
 
 bool TutorialApplication::processUnbufferedInput(const Ogre::FrameEvent& evt) {
@@ -95,6 +96,7 @@ bool TutorialApplication::processUnbufferedInput(const Ogre::FrameEvent& evt) {
 	static Ogre::Real mRotate = 0.13;
 	static Ogre::Real mMove = 250;
 
+	
 	//bool currMouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
 
 	//mMouseDown = currMouse;
@@ -122,7 +124,7 @@ void TutorialApplication::createScene(void)
 
 	//Change a camera's position 
 	mCamera->setPosition(0, 1000, 0);
-	//mCamera->lookAt(Vector3(0, 0, 0));
+	mCamera->lookAt(Vector3(0, 0, -20));
 
 	Ogre::Entity* sphereEnt = mSceneMgr->createEntity("MySphere", Ogre::SceneManager::PT_SPHERE);
 	sphereEnt->setMaterialName("BaseWhiteLighting");
@@ -148,8 +150,6 @@ void TutorialApplication::createScene(void)
 	player2Node->attachObject(player2);
 
 	//Ogre::Mesh* mMesh = Ogre::MeshManager::getSingleton().createManual()
-
-
 }
 //---------------------------------------------------------------------------
 

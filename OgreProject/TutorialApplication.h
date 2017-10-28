@@ -33,6 +33,7 @@ protected:
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
 	virtual bool keyPressed(const OIS::KeyEvent& ke);
 	virtual bool keyReleased(const OIS::KeyEvent& ke);
+	bool Moving();
 
 	//void createColourCube();
 

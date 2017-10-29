@@ -27,16 +27,13 @@ TutorialApplication::TutorialApplication(void)
 	mShutDown = false;
 
 	// player 1,2 ÁÂÇ¥¼³Á¤
-	player1Position = Vector3(-400, 0, 0);
-	player2Position = Vector3(400, 0, 0);
+	player1Position = Vector3(-1000, 0, 0);
+	player2Position = Vector3(1000, 0, 0);
 
-	player1Move = Vector3(0, 0, 0);
-	player2Move = Vector3(0, 0, 0);
+	mP1Direction = Vector3(0, 0, 0);
+	mP2Direction = Vector3(0, 0, 0);
 
-	mDirection = Vector3(0, 0, 0);
-
-
-	mMove = 200.0f;
+	mSpeed = 400.0f;
 }
 //---------------------------------------------------------------------------
 TutorialApplication::~TutorialApplication(void)
@@ -44,27 +41,41 @@ TutorialApplication::~TutorialApplication(void)
 }
 
 bool TutorialApplication::keyPressed(const OIS::KeyEvent& ke) {
-	if(player1Position.z < 10 && player1Position.z > -10){
-		if (ke.key == OIS::KC_W) player1Move.z -= mMove;
-		if (ke.key == OIS::KC_S) player1Move.z += mMove;
-	}
-	if (ke.key == OIS::KC_UP) player2Move.z -= mMove;
-	else if (ke.key == OIS::KC_DOWN) player2Move.z += mMove;
+	
+	if (ke.key == OIS::KC_W) mP1Direction.z = -1.0f;
+	if (ke.key == OIS::KC_S) mP1Direction.z = 1.0f;
+	if (ke.key == OIS::KC_UP) mP2Direction.z = -1.0f;
+	if (ke.key == OIS::KC_DOWN) mP2Direction.z = 1.0f;
 	if (ke.key == OIS::KC_ESCAPE) mShutDown = true;
 
 	return true;
 }
 
 bool TutorialApplication::keyReleased(const OIS::KeyEvent& ke) {
-	if(ke.key == OIS::KC_W && player1Move.z > 0) player1Move.z = 0;
-	if(ke.key == OIS::KC_S && player1Move.z < 0) player1Move.z = 0;
-	if(ke.key == OIS::KC_UP || ke.key == OIS::KC_DOWN) player2Move.z = 0;
+	if(ke.key == OIS::KC_W && mP1Direction.z == -1.0f) mP1Direction = 0;
+	else if(ke.key == OIS::KC_S && mP1Direction.z == 1.0f) mP1Direction = 0;
+	if (ke.key == OIS::KC_UP && mP2Direction.z == -1.0f) mP2Direction = 0;
+	else if (ke.key == OIS::KC_DOWN  && mP2Direction.z == 1.0f) mP2Direction = 0;
 	return true;
+}
+
+void TutorialApplication::CollisionDetect(Real &move) {
+
+	//
+	if (player1Node->getPosition().z > 700) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z - 1));
+	else if (player1Node->getPosition().z < -700) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z + 1));
+	else player1Node->translate(mMove * mP1Direction);
+
+	if (player2Node->getPosition().z > 700) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z - 1));
+	else if (player2Node->getPosition().z < -700) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z + 1));
+	else player2Node->translate(mMove * mP2Direction);
 }
 
 bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
 
 	bool ret = BaseApplication::frameRenderingQueued(evt);
+
+	mMove = mSpeed * evt.timeSinceLastFrame;
 
 	if (mKeyboard->isKeyDown(OIS::KC_SPACE)) mIsStarted = true;
 
@@ -76,12 +87,10 @@ bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
 	mMouse->capture();
 	mKeyboard->capture();
 
-
-	mSceneMgr->getSceneNode("Player1Node")->translate(player1Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
-	mSceneMgr->getSceneNode("Player2Node")->translate(player2Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
-
-
-
+	CollisionDetect(mMove);
+	
+	//mSceneMgr->getSceneNode("Player1Node")->translate(player1Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
+	//mSceneMgr->getSceneNode("Player2Node")->translate(player2Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
 
 	return ret;
 }
@@ -117,38 +126,53 @@ void TutorialApplication::createScene(void)
 
 	//Set ambient light 
 	mSceneMgr->setAmbientLight(ColourValue(0.5, 0.5, 0.5));
+	mSceneMgr->setSkyBox(true, "Examples/SpaceSkyBox");
 
 	//Create a light 	 
 	Light* light = mSceneMgr->createLight("MainLight");
 	light->setPosition(300, 300, 300);
 
 	//Change a camera's position 
-	mCamera->setPosition(0, 1000, 0);
+	mCamera->setPosition(-800, 1400, 2400);
 	mCamera->lookAt(Vector3(0, 0, -20));
 
-	Ogre::Entity* sphereEnt = mSceneMgr->createEntity("MySphere", Ogre::SceneManager::PT_SPHERE);
-	sphereEnt->setMaterialName("BaseWhiteLighting");
-	Ogre::SceneNode *sphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	//Ball Creating
+	sphereEnt = mSceneMgr->createEntity("MySphere", Ogre::SceneManager::PT_SPHERE);
+	sphereEnt->setMaterialName("BaseBlueLighting");
+	sphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 	sphereNode->setScale(0.5f, 0.5f, 0.5f);
 	sphereNode->setPosition(0, 0, 0);
 	sphereNode->attachObject(sphereEnt);
 
 	//Player1 Creating
-	Entity* player1 = mSceneMgr->createEntity("Player1", SceneManager::PT_CUBE);
+	player1 = mSceneMgr->createEntity("Player1", SceneManager::PT_CUBE);
 	player1->setMaterialName("BaseWhiteLighting");
-	SceneNode *player1Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player1Node");
+	player1Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player1Node");
 	player1Node->scale(0.5f, 1.0f, 2.0f);
 	player1Node->setPosition(player1Position.x, player1Position.y, player1Position.z);
 	player1Node->attachObject(player1);
 
 	//Player2 Creating
-	Entity* player2 = mSceneMgr->createEntity("Player2", SceneManager::PT_CUBE);
+	player2 = mSceneMgr->createEntity("Player2", SceneManager::PT_CUBE);
 	player2->setMaterialName("BaseWhiteLighting");
-	SceneNode *player2Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player2Node");
+	player2Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player2Node");
 	player2Node->scale(0.5f, 1.0f, 2.0f);
 	player2Node->setPosition(player2Position.x, player2Position.y, player2Position.z);
 	player2Node->attachObject(player2);
 
+	Entity* downWall = mSceneMgr->createEntity("downWall", SceneManager::PT_CUBE);
+	downWall->setMaterialName("BaseWhiteLighting");
+	SceneNode* downWallNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	downWallNode->scale(25.0f, 1.0f, 0.2f);
+	downWallNode->setPosition(0, 0, 800);
+	downWallNode->attachObject(downWall);
+
+	Entity* upWall = mSceneMgr->createEntity("upWall", SceneManager::PT_CUBE);
+	upWall->setMaterialName("BaseWhiteLighting");
+	SceneNode* upWallNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	upWallNode->scale(25.0f, 1.0f, 0.2f);
+	upWallNode->setPosition(0, 0, -800);
+	upWallNode->attachObject(upWall);
 	//Ogre::Mesh* mMesh = Ogre::MeshManager::getSingleton().createManual()
 }
 //---------------------------------------------------------------------------

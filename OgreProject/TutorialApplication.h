@@ -19,6 +19,7 @@ http://www.ogre3d.org/wiki/
 #define __TutorialApplication_h_
 
 #include "BaseApplication.h"
+using namespace Ogre;
 
 //---------------------------------------------------------------------------
 
@@ -37,18 +38,24 @@ protected:
 
 	//void createColourCube();
 
-	Ogre::Real mRotate;
-	Ogre::Real mMove;
-	Ogre::SceneNode* mCamNode;
-	Ogre::Vector3 mDirection;
+	Entity* sphereEnt;
+	SceneNode *sphereNode;
+	Entity* player1;
+	SceneNode *player1Node;
+	Entity* player2;
+	SceneNode *player2Node;
 
-	Ogre::Vector3 player1Position;						   
-	Ogre::Vector3 player2Position;
+	Real mRotate;
+	Real mMove;
+	Real mSpeed;
+	SceneNode* mCamNode;
+	Vector3 mP1Direction;
+	Vector3 mP2Direction;
 
-	Ogre::Vector3 player1Move;
-	Ogre::Vector3 player2Move;
+	Vector3 player1Position;						   
+	Vector3 player2Position;
 
-
+	void CollisionDetect(Real &move);
 private:
 	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
 	bool mIsStarted;

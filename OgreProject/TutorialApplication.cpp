@@ -32,8 +32,10 @@ TutorialApplication::TutorialApplication(void)
 
 	mP1Direction = Vector3(0, 0, 0);
 	mP2Direction = Vector3(0, 0, 0);
+	mBallDirection = Vector3(0, 0, 0);
 
-	mSpeed = 400.0f;
+	mPaddleSpeed = 1000.0f;
+	mBallSpeed = 1000.0f;
 }
 //---------------------------------------------------------------------------
 TutorialApplication::~TutorialApplication(void)
@@ -59,27 +61,62 @@ bool TutorialApplication::keyReleased(const OIS::KeyEvent& ke) {
 	return true;
 }
 
-void TutorialApplication::CollisionDetect(Real &move) {
+void TutorialApplication::PaddleMove(Real &move) {
 
-	//
+	//Restricting the position of paddles #Node1
 	if (player1Node->getPosition().z > 700) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z - 1));
 	else if (player1Node->getPosition().z < -700) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z + 1));
-	else player1Node->translate(mMove * mP1Direction);
+	else player1Node->translate(move * mP1Direction);
 
+	//Restricting the position of paddles #Node2
 	if (player2Node->getPosition().z > 700) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z - 1));
 	else if (player2Node->getPosition().z < -700) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z + 1));
-	else player2Node->translate(mMove * mP2Direction);
+	else player2Node->translate(move * mP2Direction);
 }
 
+void TutorialApplication::BallMove(Real &move) {
+	BallCollapse(move);
+	ballNode->translate(move * mBallDirection);
+}
+
+void TutorialApplication::BallCollapse(Real &move) {
+	// Player1 - Ball collapsing
+	if ((player1Node->getPosition().x + 25.0f > ballNode->getPosition().x) &&
+		(ballNode->getPosition().z > player1Node->getPosition().z - 100.0f)	&&
+		(ballNode->getPosition().z < player1Node->getPosition().z + 100.0f))
+	{
+		mBallDirection *= Vector3(-1, 0, -1);
+	}
+	
+	// Player2 - Ball collapsing
+	if ((player2Node->getPosition().x - 25.0f < ballNode->getPosition().x) &&
+		(ballNode->getPosition().z > player2Node->getPosition().z - 100.0f) &&
+		(ballNode->getPosition().z < player2Node->getPosition().z + 100.0f))
+	{
+		mBallDirection *= Vector3(-1, 0, -1);
+	}
+
+	// Ball - Upperwall collapsing
+	if (ballNode->getPosition().y < upWallNode->getPosition().y) mBallDirection *= Vector3(0, 0, -1);
+	if (ballNode->getPosition().y > downWallNode->getPosition().y) mBallDirection *= Vector3(0, 0, -1);
+	// Ball - Downwall collapsing
+
+}
 bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
 
 	bool ret = BaseApplication::frameRenderingQueued(evt);
 
-	mMove = mSpeed * evt.timeSinceLastFrame;
+	mPaddleMove = mPaddleSpeed * evt.timeSinceLastFrame;
+	mBallMove = mBallSpeed * evt.timeSinceLastFrame;
 
-	if (mKeyboard->isKeyDown(OIS::KC_SPACE)) mIsStarted = true;
-
-	if (!mIsStarted) return ret;
+	if (mKeyboard->isKeyDown(OIS::KC_SPACE)) {
+		mIsStarted = true;
+		mBallDirection = Vector3(-1, 0, -1);
+	}
+	if (mKeyboard->isKeyDown(OIS::KC_R)) {
+		mIsStarted = false;
+		ballNode->setPosition(Vector3(0, 0, 0));
+	}
 
 	if (!processUnbufferedInput(evt)) return false;
 	if (mShutDown) return false;
@@ -87,25 +124,22 @@ bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
 	mMouse->capture();
 	mKeyboard->capture();
 
-	CollisionDetect(mMove);
-	
+	if (mIsStarted == true) {
+		PaddleMove(mPaddleMove);
+		BallMove(mBallMove);
+	}
 	//mSceneMgr->getSceneNode("Player1Node")->translate(player1Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
 	//mSceneMgr->getSceneNode("Player2Node")->translate(player2Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
 
 	return ret;
 }
 
-bool TutorialApplication::Moving(){
-	return true;
-}
-
 bool TutorialApplication::processUnbufferedInput(const Ogre::FrameEvent& evt) {
 	static bool mMouseDown = false;
 	static Ogre::Real mToggle = 0.0;
 	static Ogre::Real mRotate = 0.13;
-	static Ogre::Real mMove = 250;
+	static Ogre::Real mPaddleMove = 250;
 
-	
 	//bool currMouse = mMouse->getMouseState().buttonDown(OIS::MB_Left);
 
 	//mMouseDown = currMouse;
@@ -137,12 +171,11 @@ void TutorialApplication::createScene(void)
 	mCamera->lookAt(Vector3(0, 0, -20));
 
 	//Ball Creating
-	sphereEnt = mSceneMgr->createEntity("MySphere", Ogre::SceneManager::PT_SPHERE);
-	sphereEnt->setMaterialName("BaseBlueLighting");
-	sphereNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
-	sphereNode->setScale(0.5f, 0.5f, 0.5f);
-	sphereNode->setPosition(0, 0, 0);
-	sphereNode->attachObject(sphereEnt);
+	ballEnt = mSceneMgr->createEntity("MyBall", "ogrehead.mesh");
+	ballNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	ballNode->setScale(1, 1, 1);
+	ballNode->setPosition(0, 0, 0);
+	ballNode->attachObject(ballEnt);
 
 	//Player1 Creating
 	player1 = mSceneMgr->createEntity("Player1", SceneManager::PT_CUBE);
@@ -160,16 +193,16 @@ void TutorialApplication::createScene(void)
 	player2Node->setPosition(player2Position.x, player2Position.y, player2Position.z);
 	player2Node->attachObject(player2);
 
-	Entity* downWall = mSceneMgr->createEntity("downWall", SceneManager::PT_CUBE);
+	downWall = mSceneMgr->createEntity("downWall", SceneManager::PT_CUBE);
 	downWall->setMaterialName("BaseWhiteLighting");
-	SceneNode* downWallNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	downWallNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 	downWallNode->scale(25.0f, 1.0f, 0.2f);
 	downWallNode->setPosition(0, 0, 800);
 	downWallNode->attachObject(downWall);
 
-	Entity* upWall = mSceneMgr->createEntity("upWall", SceneManager::PT_CUBE);
+	upWall = mSceneMgr->createEntity("upWall", SceneManager::PT_CUBE);
 	upWall->setMaterialName("BaseWhiteLighting");
-	SceneNode* upWallNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
+	upWallNode = mSceneMgr->getRootSceneNode()->createChildSceneNode();
 	upWallNode->scale(25.0f, 1.0f, 0.2f);
 	upWallNode->setPosition(0, 0, -800);
 	upWallNode->attachObject(upWall);

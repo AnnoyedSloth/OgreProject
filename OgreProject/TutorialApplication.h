@@ -34,28 +34,39 @@ protected:
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
 	virtual bool keyPressed(const OIS::KeyEvent& ke);
 	virtual bool keyReleased(const OIS::KeyEvent& ke);
-	bool Moving();
+
 
 	//void createColourCube();
-
-	Entity* sphereEnt;
-	SceneNode *sphereNode;
+	//Players Entities, Nodes
+	Entity* ballEnt;
+	SceneNode *ballNode;
 	Entity* player1;
 	SceneNode *player1Node;
 	Entity* player2;
 	SceneNode *player2Node;
 
+	//Objects Entities, Nodes
+	Entity* downWall;
+	SceneNode* downWallNode;
+	Entity* upWall;
+	SceneNode* upWallNode;
+
 	Real mRotate;
-	Real mMove;
-	Real mSpeed;
+	Real mPaddleMove;
+	Real mPaddleSpeed;
+	Real mBallMove;
+	Real mBallSpeed;
 	SceneNode* mCamNode;
 	Vector3 mP1Direction;
 	Vector3 mP2Direction;
+	Vector3 mBallDirection;
 
 	Vector3 player1Position;						   
 	Vector3 player2Position;
 
-	void CollisionDetect(Real &move);
+	void BallMove(Real &move);
+	void PaddleMove(Real &move);
+	void BallCollapse(Real &move);
 private:
 	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
 	bool mIsStarted;

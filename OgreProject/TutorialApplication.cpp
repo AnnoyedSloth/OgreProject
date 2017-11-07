@@ -14,14 +14,16 @@ Tutorial Framework (for Ogre 1.9)
 http://www.ogre3d.org/wiki/
 -----------------------------------------------------------------------------
 */
-
+#include<string>
 #include "stdafx.h"
 #include "TutorialApplication.h"
+
+
 
 using namespace Ogre;
 
 //---------------------------------------------------------------------------
-TutorialApplication::TutorialApplication(void)
+TutorialApplication::TutorialApplication(void) : mInfoLabel(0)
 {
 	// 종료 플래그
 	mShutDown = false;
@@ -36,41 +38,79 @@ TutorialApplication::TutorialApplication(void)
 
 	mPaddleSpeed = 1000.0f;
 	mBallSpeed = 1000.0f;
+
+	mP1Score = 0;
+	mP2Score = 0;
+
+	//
 }
 //---------------------------------------------------------------------------
 TutorialApplication::~TutorialApplication(void)
 {
 }
 
+void TutorialApplication::createFrameListener(void) {
+	BaseApplication::createFrameListener();
+
+	mInfoLabel = mTrayMgr->createLabel(OgreBites::TL_TOP, "TInfo", "Press Spacebar to start game", 350);
+}
+
 bool TutorialApplication::keyPressed(const OIS::KeyEvent& ke) {
-	
-	if (ke.key == OIS::KC_W) mP1Direction.z = -1.0f;
-	if (ke.key == OIS::KC_S) mP1Direction.z = 1.0f;
-	if (ke.key == OIS::KC_UP) mP2Direction.z = -1.0f;
-	if (ke.key == OIS::KC_DOWN) mP2Direction.z = 1.0f;
+
+	if (ke.key == OIS::KC_W) {
+		mP1Direction.z = -1.0f; mP1Skill = true;
+	}
+	if (ke.key == OIS::KC_S) {
+		mP1Direction.z = 1.0f; mP1Skill = true;
+	}
+	if (ke.key == OIS::KC_UP) {
+		mP2Direction.z = -1.0f; mP2Skill = true;
+	}
+	if (ke.key == OIS::KC_DOWN) {
+		mP2Direction.z = 1.0f; mP2Skill = true;
+	}
 	if (ke.key == OIS::KC_ESCAPE) mShutDown = true;
 
 	return true;
 }
 
 bool TutorialApplication::keyReleased(const OIS::KeyEvent& ke) {
-	if(ke.key == OIS::KC_W && mP1Direction.z == -1.0f) mP1Direction = 0;
-	else if(ke.key == OIS::KC_S && mP1Direction.z == 1.0f) mP1Direction = 0;
-	if (ke.key == OIS::KC_UP && mP2Direction.z == -1.0f) mP2Direction = 0;
-	else if (ke.key == OIS::KC_DOWN  && mP2Direction.z == 1.0f) mP2Direction = 0;
+	if (ke.key == OIS::KC_W && mP1Direction.z == -1.0f) {
+		mP1Direction = 0;
+		mP1Skill = false;
+	}
+	else if (ke.key == OIS::KC_S && mP1Direction.z == 1.0f) {
+		mP1Direction = 0;
+		mP1Skill = false;
+	}
+	if (ke.key == OIS::KC_UP && mP2Direction.z == -1.0f) {
+		mP2Direction = 0;
+		mP2Skill = false;
+	}
+	else if (ke.key == OIS::KC_DOWN  && mP2Direction.z == 1.0f) {
+		mP2Direction = 0;
+		mP2Skill = false;
+	}
 	return true;
+}
+
+void TutorialApplication::SetScore() {
+	String score;
+	score = std::to_string(mP1Score) + "        :        " + std::to_string(mP2Score);
+	mInfoLabel->setCaption(score);
 }
 
 void TutorialApplication::PaddleMove(Real &move) {
 
-	//Restricting the position of paddles #Node1
-	if (player1Node->getPosition().z > 700) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z - 1));
-	else if (player1Node->getPosition().z < -700) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z + 1));
+	//Restricting the position of Player1
+	//1st row : checking vertical axis 
+	if (player1Node->getPosition().z > RESTRICT_AREA) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z - 1));
+	else if (player1Node->getPosition().z < -RESTRICT_AREA) player1Node->setPosition(Vector3(player1Node->getPosition().x, player1Node->getPosition().y, player1Node->getPosition().z + 1));
 	else player1Node->translate(move * mP1Direction);
 
-	//Restricting the position of paddles #Node2
-	if (player2Node->getPosition().z > 700) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z - 1));
-	else if (player2Node->getPosition().z < -700) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z + 1));
+	//Restricting the position of Player2
+	if (player2Node->getPosition().z > RESTRICT_AREA) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z - 1));
+	else if (player2Node->getPosition().z < -RESTRICT_AREA) player2Node->setPosition(Vector3(player2Node->getPosition().x, player2Node->getPosition().y, player2Node->getPosition().z + 1));
 	else player2Node->translate(move * mP2Direction);
 }
 
@@ -81,41 +121,84 @@ void TutorialApplication::BallMove(Real &move) {
 
 void TutorialApplication::BallCollapse(Real &move) {
 	// Player1 - Ball collapsing
-	if ((player1Node->getPosition().x + 25.0f > ballNode->getPosition().x) &&
-		(ballNode->getPosition().z > player1Node->getPosition().z - 100.0f)	&&
-		(ballNode->getPosition().z < player1Node->getPosition().z + 100.0f))
+	if ((player1Node->getPosition().x + BALL_RADIUS > ballNode->getPosition().x) &&
+		(player1Node->getPosition().x - BALL_RADIUS < ballNode->getPosition().x) &&
+		(ballNode->getPosition().z > player1Node->getPosition().z - PLAYER_SIZE / 2) &&
+		(ballNode->getPosition().z < player1Node->getPosition().z + PLAYER_SIZE / 2))
 	{
-		mBallDirection *= Vector3(-1, 0, -1);
+		if ((mP1Direction.z == -1.0f && mBallDirection.z < 0) ||
+			(mP1Direction.z == 1.0f && mBallDirection.z > 0)) {
+			mBallDirection *= Vector3(-1, 0, 0.8f);
+		}
+		else if ((mP1Direction.z == -1.0f && mBallDirection.z > 0) ||
+			(mP1Direction.z == 1.0f && mBallDirection.z < 0)) {
+			mBallDirection *= Vector3(-1.2f, 0, -1);
+		}
+		else mBallDirection *= Vector3(-1, 0, -1);
 	}
-	
+
 	// Player2 - Ball collapsing
-	if ((player2Node->getPosition().x - 25.0f < ballNode->getPosition().x) &&
-		(ballNode->getPosition().z > player2Node->getPosition().z - 100.0f) &&
-		(ballNode->getPosition().z < player2Node->getPosition().z + 100.0f))
+	if ((player2Node->getPosition().x - BALL_RADIUS < ballNode->getPosition().x) &&
+		(player2Node->getPosition().x + BALL_RADIUS > ballNode->getPosition().x) &&
+		(ballNode->getPosition().z > player2Node->getPosition().z - PLAYER_SIZE / 2) &&
+		(ballNode->getPosition().z < player2Node->getPosition().z + PLAYER_SIZE / 2))
 	{
-		mBallDirection *= Vector3(-1, 0, -1);
+		if ((mP2Direction.z == -1.0f && mBallDirection.z < 0) ||
+			(mP2Direction.z == 1.0f && mBallDirection.z > 0)) {
+			mBallDirection *= Vector3(-1, 0, 0.8f);
+		}
+		else if ((mP2Direction.z == -1.0f && mBallDirection.z > 0) ||
+			(mP2Direction.z == 1.0f && mBallDirection.z < 0)) {
+			mBallDirection *= Vector3(-1.2f, 0, -1);
+		}
+		else mBallDirection *= Vector3(-1, 0, -1);
 	}
 
 	// Ball - Upperwall collapsing
-	if (ballNode->getPosition().y < upWallNode->getPosition().y) mBallDirection *= Vector3(0, 0, -1);
-	if (ballNode->getPosition().y > downWallNode->getPosition().y) mBallDirection *= Vector3(0, 0, -1);
+	if ((ballNode->getPosition().z < upWallNode->getPosition().z) &&
+		(ballNode->getPosition().x > upWallNode->getPosition().x - WALL_WIDTH / 2) &&
+		(ballNode->getPosition().x < upWallNode->getPosition().x + WALL_WIDTH / 2)) mBallDirection *= Vector3(1, 0, -1);
 	// Ball - Downwall collapsing
+	if ((ballNode->getPosition().z > downWallNode->getPosition().z) &&
+		(ballNode->getPosition().x > downWallNode->getPosition().x - WALL_WIDTH / 2) &&
+		(ballNode->getPosition().x < downWallNode->getPosition().x + WALL_WIDTH / 2))
+		mBallDirection *= Vector3(1, 0, -1);
 
 }
+
+void TutorialApplication::Reset() {
+	mIsStarted = false;
+	player1Node->setPosition(-1000, 0, 0);
+	player2Node->setPosition(1000, 0, 0);
+	ballNode->setPosition(Vector3(0, 0, 0));
+}
+
 bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
 
 	bool ret = BaseApplication::frameRenderingQueued(evt);
 
+	//mTrayMgr->moveWidgetToTray(mInfoLabel, OgreBites::TL_TOP, 0);
+	//mInfoLabel->show();
+	//mInfoLabel->setCaption("Hello World!");
+
 	mPaddleMove = mPaddleSpeed * evt.timeSinceLastFrame;
-	mBallMove = mBallSpeed * evt.timeSinceLastFrame;
+	mBallMove = mBallSpeed * evt.timeSinceLastEvent;
 
 	if (mKeyboard->isKeyDown(OIS::KC_SPACE)) {
+		srand(time(NULL));
+		float randNum = std::sin(rand() % 60);
+		float startDirection = ((rand() % 2) - 0.5f) * 2;
 		mIsStarted = true;
-		mBallDirection = Vector3(-1, 0, -1);
+		SetScore();
+		mBallDirection = Vector3(1-randNum, 0, randNum);
+		mBallDirection.normalise();
+		mBallDirection *= startDirection;
 	}
 	if (mKeyboard->isKeyDown(OIS::KC_R)) {
-		mIsStarted = false;
-		ballNode->setPosition(Vector3(0, 0, 0));
+		mP1Score = 0;
+		mP2Score = 0;
+		Reset();
+		SetScore();
 	}
 
 	if (!processUnbufferedInput(evt)) return false;
@@ -124,12 +207,30 @@ bool TutorialApplication::frameRenderingQueued(const Ogre::FrameEvent& evt) {
 	mMouse->capture();
 	mKeyboard->capture();
 
-	if (mIsStarted == true) {
-		PaddleMove(mPaddleMove);
-		BallMove(mBallMove);
+	if (mP1Score > 2 || mP2Score > 2) {
+		Reset();
+		mInfoLabel->setCaption("GameOver press R to reset game");
 	}
-	//mSceneMgr->getSceneNode("Player1Node")->translate(player1Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
-	//mSceneMgr->getSceneNode("Player2Node")->translate(player2Move * evt.timeSinceLastFrame, Node::TS_LOCAL);
+	else
+	{
+		if (mIsStarted == true) {
+			PaddleMove(mPaddleMove);
+			BallMove(mBallMove);
+			if (ballNode->getPosition().x > WALL_WIDTH / 2) {
+				Reset();
+				mP1Score++;
+				SetScore();
+			}
+			else if (ballNode->getPosition().x < -WALL_WIDTH / 2) {
+				Reset();
+				mP2Score++;
+				SetScore();
+			}
+
+			mCamera->lookAt(Vector3(0, 0, 0));
+		}
+	}
+
 
 	return ret;
 }
@@ -161,6 +262,10 @@ void TutorialApplication::createScene(void)
 	//Set ambient light 
 	mSceneMgr->setAmbientLight(ColourValue(0.5, 0.5, 0.5));
 	mSceneMgr->setSkyBox(true, "Examples/SpaceSkyBox");
+	ParticleSystem* sunParticle = mSceneMgr->createParticleSystem("Sun", "Space/Sun");
+	SceneNode* particleNode = mSceneMgr->getRootSceneNode()->createChildSceneNode("Particle");
+	particleNode->attachObject(sunParticle);
+	particleNode->setPosition(-800, 600, -800);
 
 	//Create a light 	 
 	Light* light = mSceneMgr->createLight("MainLight");
@@ -182,7 +287,7 @@ void TutorialApplication::createScene(void)
 	player1->setMaterialName("BaseWhiteLighting");
 	player1Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player1Node");
 	player1Node->scale(0.5f, 1.0f, 2.0f);
-	player1Node->setPosition(player1Position.x, player1Position.y, player1Position.z);
+	player1Node->setPosition(player1Position);
 	player1Node->attachObject(player1);
 
 	//Player2 Creating
@@ -190,7 +295,7 @@ void TutorialApplication::createScene(void)
 	player2->setMaterialName("BaseWhiteLighting");
 	player2Node = mSceneMgr->getRootSceneNode()->createChildSceneNode("Player2Node");
 	player2Node->scale(0.5f, 1.0f, 2.0f);
-	player2Node->setPosition(player2Position.x, player2Position.y, player2Position.z);
+	player2Node->setPosition(player2Position);
 	player2Node->attachObject(player2);
 
 	downWall = mSceneMgr->createEntity("downWall", SceneManager::PT_CUBE);
@@ -207,6 +312,7 @@ void TutorialApplication::createScene(void)
 	upWallNode->setPosition(0, 0, -800);
 	upWallNode->attachObject(upWall);
 	//Ogre::Mesh* mMesh = Ogre::MeshManager::getSingleton().createManual()
+
 }
 //---------------------------------------------------------------------------
 

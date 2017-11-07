@@ -21,6 +21,11 @@ http://www.ogre3d.org/wiki/
 #include "BaseApplication.h"
 using namespace Ogre;
 
+#define BALL_RADIUS  25
+#define PLAYER_SIZE  200
+#define WALL_WIDTH  2200
+#define RESTRICT_AREA 700
+
 //---------------------------------------------------------------------------
 
 class TutorialApplication : public BaseApplication
@@ -34,7 +39,10 @@ protected:
 	virtual bool frameRenderingQueued(const Ogre::FrameEvent& evt);
 	virtual bool keyPressed(const OIS::KeyEvent& ke);
 	virtual bool keyReleased(const OIS::KeyEvent& ke);
+	virtual void createFrameListener(void);
 
+
+	SceneNode* mCamNode;
 
 	//void createColourCube();
 	//Players Entities, Nodes
@@ -51,22 +59,35 @@ protected:
 	Entity* upWall;
 	SceneNode* upWallNode;
 
+	//Values of object
 	Real mRotate;
 	Real mPaddleMove;
 	Real mPaddleSpeed;
 	Real mBallMove;
 	Real mBallSpeed;
-	SceneNode* mCamNode;
+
+	//Transform, Direction
 	Vector3 mP1Direction;
 	Vector3 mP2Direction;
 	Vector3 mBallDirection;
-
 	Vector3 player1Position;						   
 	Vector3 player2Position;
+
+	int mP1Score;
+	int mP2Score;
+
+	bool mP1Skill;
+	bool mP2Skill;
+
+
+	//UI Labels
+	OgreBites::Label* mInfoLabel;
 
 	void BallMove(Real &move);
 	void PaddleMove(Real &move);
 	void BallCollapse(Real &move);
+	void SetScore();
+	void Reset();
 private:
 	bool processUnbufferedInput(const Ogre::FrameEvent& evt);
 	bool mIsStarted;
